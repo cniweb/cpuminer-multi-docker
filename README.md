@@ -1,11 +1,17 @@
-# XMRig
+# cpuminer-multi
 
-![XMRig](https://avatars0.githubusercontent.com/u/27528955?s=460&u=555699fb82e7598ed7dd1f6e47302042b48a10c3&v=4)
+This is a multi-threaded CPU miner, fork of pooler's cpuminer.
 
-High performance, open source RandomX, CryptoNight, AstroBWT and Argon2 CPU/GPU Miner Docker Image.
+[![Snyk Container](https://github.com/cniweb/cpuminer-multi-docker/actions/workflows/snyk-container-analysis.yml/badge.svg)](https://github.com/cniweb/cpuminer-multi-docker/actions/workflows/snyk-container-analysis.yml)
 
-## Usage
+## Usage from Docker.io
 
 ```bash
-docker run cniweb/xmrig:latest
+docker run cniweb/cpuminer-multi:latest
+```
+
+## Usage from Quay.io
+
+```bash
+docker pull quay.io/cniweb/cpuminer-multi:latest
 ```
