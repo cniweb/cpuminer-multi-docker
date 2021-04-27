@@ -1,0 +1,14 @@
+{
+	"__comment_neoscrypt_zpool" : "-o stratum+tcp://neoscrypt.eu.mine.zpool.ca:4233 -u 3MQJYf8ckmWE63CwWCWjY1Sfc8uUU1FNBx -p c=BTC",
+	"__comment_neoscrypt_zergpool" : "-o stratum+tcp://neoscrypt.mine.zergpool.com:4233 -u LNec6RpZxX6Q1EJYkKjUPBTohM7Ux6uMUy -p c=LTC,id=docker",
+	"__comment_yescrypt_zpool" : "-o stratum+tcp://yescrypt.eu.mine.zpool.ca:6233 -u 3MQJYf8ckmWE63CwWCWjY1Sfc8uUU1FNBx -p c=BTC",
+	"__comment_yescrypt_zergpool" : "-o stratum+tcp://yescrypt.mine.zergpool.com:6233 -u LNec6RpZxX6Q1EJYkKjUPBTohM7Ux6uMUy -p c=LTC,id=docker",
+
+	"url" : "stratum+tcp://yescrypt.mine.zergpool.com:6233",
+	"user" : "LNec6RpZxX6Q1EJYkKjUPBTohM7Ux6uMUy",
+	"pass" : "c=LTC,id=docker",
+
+	"algo" : "yescrypt",
+
+	"no-color" : true
+}
