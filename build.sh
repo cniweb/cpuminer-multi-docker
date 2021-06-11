@@ -1,7 +1,11 @@
 #!/bin/bash
-
-docker build . --tag cniweb/cpuminer-multi:1.3.7
-docker tag cniweb/cpuminer-multi:1.3.7 ghcr.io/cniweb/cpuminer-multi:1.3.7
-docker tag cniweb/cpuminer-multi:1.3.7 ghcr.io/cniweb/cpuminer-multi:latest
-docker push ghcr.io/cniweb/cpuminer-multi:1.3.7
-docker push ghcr.io/cniweb/cpuminer-multi:latest
+version="1.3.7"
+image="cpuminer-multi"
+docker build . --tag docker.io/cniweb/$image:$version
+docker tag docker.io/cniweb/$image:$version ghcr.io/cniweb/$image:$version
+docker tag docker.io/cniweb/$image:$version ghcr.io/cniweb/$image:latest
+docker tag docker.io/cniweb/$image:$version docker.io/cniweb/$image:latest
+docker push ghcr.io/cniweb/$image:$version
+docker push ghcr.io/cniweb/$image:latest
+docker push docker.io/cniweb/$image:$version
+docker push docker.io/cniweb/$image:latest
