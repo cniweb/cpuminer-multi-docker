@@ -1,4 +1,4 @@
-FROM  debian:bullseye
+FROM  debian:stable-slim
 RUN set -x \
     # Runtime dependencies.
  && apt-get update \
