@@ -7,10 +7,10 @@ This is a multi-threaded CPU miner, fork of pooler's cpuminer.
 ## Usage from ghcr.io
 
 ```bash
-docker pull ghcr.io/cniweb/cpuminer-multi:latest
+docker run ghcr.io/cniweb/cpuminer-multi:latest
 ```
 
-https://github.com/cniweb/cpuminer-multi-docker/pkgs/container/cpuminer-multi
+<https://github.com/cniweb/cpuminer-multi-docker/pkgs/container/cpuminer-multi>
 
 ## Usage from Docker.io
 
@@ -21,5 +21,5 @@ docker run cniweb/cpuminer-multi:latest
 ## Usage from Quay.io
 
 ```bash
-docker pull quay.io/cniweb/cpuminer-multi:latest
+docker run quay.io/cniweb/cpuminer-multi:latest
 ```
