@@ -15,7 +15,7 @@ docker run ghcr.io/cniweb/cpuminer-multi:latest
 ## Usage from Docker.io
 
 ```bash
-docker run cniweb/cpuminer-multi:latest
+docker run docker.io/cniweb/cpuminer-multi:latest
 ```
 
 ## Usage from Quay.io
