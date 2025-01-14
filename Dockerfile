@@ -1,4 +1,6 @@
 FROM debian:stable-slim
+
+ARG VERSION_TAG=1.3.7
 RUN set -x \
     # Runtime dependencies.
  && apt-get update \
@@ -11,9 +13,9 @@ RUN set -x \
         g++ \
         git \
         libcurl4-openssl-dev \
+        libgmp-dev \
         libjansson-dev \
         libssl-dev \
-        libgmp-dev \
         libz-dev \
         make \
         pkg-config
