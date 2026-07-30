@@ -28,6 +28,10 @@ LICENSE
 *.log
 **/*.log
 
+# Build and test scripts
+build.sh
+security-check.sh
+
 # Whitesource config
 .whitesource
 
