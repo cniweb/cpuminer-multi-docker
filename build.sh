@@ -1,4 +1,6 @@
 #!/bin/bash
+set -eu
+
 # Build script for cpuminer-multi Docker image
 # Define image name, version and registries
 image="cpuminer-multi"
