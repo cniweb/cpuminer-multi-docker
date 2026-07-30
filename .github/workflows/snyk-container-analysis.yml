@@ -84,6 +84,6 @@ jobs:
         if [ "$string_null_count" -gt 0 ]; then echo "ERROR: $string_null_count string null values"; exit 1; fi
         echo "SUCCESS: No null severity values found"
     - name: Upload result to GitHub Code Scanning
-      uses: github/codeql-action/upload-sarif@e46ed2cbd01164d986452f91f178727624ae40d7 # v4
+      uses: github/codeql-action/upload-sarif@e4fba868fa4b1b91e1fdab776edc8cfbe6e9fb81 # v4
       with:
         sarif_file: snyk.sarif
