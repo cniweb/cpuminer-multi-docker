@@ -1,0 +1,39 @@
+# Git
+.git
+.gitignore
+.github
+
+# Documentation
+README.md
+CHANGELOG.md
+AGENTS.md
+LICENSE
+
+# Build artifacts
+**/*.tar.gz
+**/*.zip
+
+# Temporary files
+*.tmp
+*.temp
+**/.DS_Store
+
+# IDE files
+.vscode
+.idea
+*.swp
+*.swo
+
+# Logs
+*.log
+**/*.log
+
+# Whitesource config
+.whitesource
+
+# Compose files (not needed in image build context)
+compose.yaml
+compose.*.yaml
+
+# Environment examples
+.env.example
