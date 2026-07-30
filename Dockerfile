@@ -17,7 +17,7 @@ RUN set -eu && groupadd -g ${CPUMINER_GID} ${CPUMINER_USER} \
     && useradd -u ${CPUMINER_UID} -g ${CPUMINER_GID} -m -s /usr/sbin/nologin ${CPUMINER_USER}
 
 # Install runtime and build dependencies, compile from source
-RUN set -x \
+RUN set -eu \
     && apt-get update \
     && apt-get upgrade -y \
     && apt-get install -y --no-install-recommends \
