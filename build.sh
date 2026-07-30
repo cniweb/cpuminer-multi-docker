@@ -4,7 +4,7 @@ set -eu
 # Build script for cpuminer-multi Docker image
 # Define image name, version and registries
 image="cpuminer-multi"
-version="1.3.7"
+version="1.3.1-multi"
 registries=("docker.io" "ghcr.io")
 
 # Support for Dockerfile variant

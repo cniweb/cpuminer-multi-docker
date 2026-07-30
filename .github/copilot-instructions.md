@@ -24,6 +24,7 @@
 
 ## Conventions
 - Keep cpuminer-multi version synchronized across all four files: `Dockerfile`, `build.sh`, `README.md`, and `CHANGELOG.md`. The release workflow handles all four automatically, promoting `CHANGELOG.md`'s `## [Unreleased]` section to a dated version heading; it fails if that section is missing, so add one before triggering a release.
+- **Important:** Upstream tpruvot/cpuminer-multi is dormant since 2017 — the last real tag is `v1.3.1-multi`. The `Dockerfile` no longer runs `git checkout "$VERSION_TAG"` because the original `v1.3.7` tag never existed upstream. The build relies on the `linux` branch HEAD from `git clone -b linux`.
 - Use port `8080` consistently.
 - The image runs as a non-root `cpuminer` user by default for security.
 - For releases, prefer workflow `.github/workflows/release-from-version.yml`.

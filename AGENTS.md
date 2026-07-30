@@ -25,6 +25,7 @@
 ## Release/versioning
 
 - cpuminer-multi version bumps must stay synchronized across files: `Dockerfile`, `build.sh`, `README.md`, and `CHANGELOG.md`.
+- **Known issue:** Upstream tpruvot/cpuminer-multi is dormant since 2017; the last real release is `v1.3.1-multi`. The Dockerfile builds from the `linux` branch HEAD (no tag checkout) since later tags do not exist upstream.
 - The release workflow (`.github/workflows/release-from-version.yml`) handles all four automatically: it updates version refs, and promotes `CHANGELOG.md` `## [Unreleased]` heading to `## [<version>] - <date>`. **The workflow fails fast if `CHANGELOG.md` has no `## [Unreleased]` section** -- add one with the release notes before triggering it.
 - Prefer that workflow for releases: it updates version refs, commits, tags `vX.Y.Z`, and creates the GitHub release.
 
