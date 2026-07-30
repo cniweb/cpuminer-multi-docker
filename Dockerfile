@@ -1,7 +1,7 @@
 FROM debian:trixie-slim
 
 # Set non-root user early
-ARG VERSION_TAG=1.3.7
+ARG VERSION_TAG=v1.3.7
 ARG CPUMINER_USER=cpuminer
 ARG CPUMINER_UID=1000
 ARG CPUMINER_GID=1000
@@ -38,6 +38,7 @@ RUN set -x \
     # Compile from source code.
     && git clone --recursive https://github.com/tpruvot/cpuminer-multi.git -b linux /tmp/cpuminer \
     && cd /tmp/cpuminer \
+    && git checkout "$VERSION_TAG" \
     && ./autogen.sh \
     && extracflags="$extracflags -Ofast -flto -fuse-linker-plugin -ftree-loop-if-convert-stores" \
     && CFLAGS="-O2 $extracflags -DUSE_ASM -pg" ./configure --with-crypto --with-curl \
