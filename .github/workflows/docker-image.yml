@@ -1,18 +1,2 @@
-name: Docker Image CI
-
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-
-jobs:
-
-  build:
-
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v3
-    - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag cniweb/cpuminer-multi:$(date +%s)
+# This workflow has been replaced by docker-build.yml
+# See .github/workflows/docker-build.yml for the current CI pipeline
