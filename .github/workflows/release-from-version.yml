@@ -1,0 +1,118 @@
+name: Create Release From Version
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "cpuminer-multi version (e.g. 1.3.7 or v1.3.7)"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 0
+
+      - name: Normalize version
+        id: ver
+        shell: bash
+        run: |
+          set -euo pipefail
+          INPUT="${{ github.event.inputs.version }}"
+          VERSION="${INPUT#v}"
+          TAG="v${VERSION}"
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid version: $INPUT"
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Ensure tag does not exist
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --tags --force
+          if git rev-parse "${{ steps.ver.outputs.tag }}" >/dev/null 2>&1; then
+            echo "Tag ${{ steps.ver.outputs.tag }} already exists."
+            exit 1
+          fi
+
+      - name: Update version references
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.ver.outputs.version }}"
+          python - << 'PYEOF'
+          import pathlib, re, os, datetime
+          v = os.environ["VERSION"]
+          for path, rules in [
+              (pathlib.Path("Dockerfile"), [(r"(?m)^ARG VERSION_TAG=.*$", f"ARG VERSION_TAG={v}")]),
+              (pathlib.Path("build.sh"), [(r'(?m)^version="[^"]+"$', f'version="{v}"')]),
+              (pathlib.Path("README.md"), [
+                  (r"(`Dockerfile` currently uses cpuminer-multi `)[^`]+(`\.)", rf"\g<1>{v}\2"),
+                  (r"(`build\.sh` currently tags/pushes `)[^`]+(`\.)", rf"\g<1>{v}\2"),
+              ]),
+          ]:
+              text = path.read_text(encoding="utf-8")
+              orig = text
+              for pat, repl in rules:
+                  text = re.sub(pat, repl, text)
+              if text != orig:
+                  path.write_text(text, encoding="utf-8")
+          cl = pathlib.Path("CHANGELOG.md")
+          ct = cl.read_text(encoding="utf-8")
+          if "## [Unreleased]" not in ct:
+              raise SystemExit("CHANGELOG.md has no '## [Unreleased]' section.")
+          ct = ct.replace("## [Unreleased]", f"## [{v}] - {datetime.date.today().isoformat()}", 1)
+          cl.write_text(ct, encoding="utf-8")
+          PYEOF
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+
+      - name: Commit version changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet; then exit 1; fi
+          git add Dockerfile build.sh README.md CHANGELOG.md
+          git commit -m "chore(release): ${{ steps.ver.outputs.tag }}"
+
+      - name: Create and push tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          git tag "${{ steps.ver.outputs.tag }}"
+          git push origin HEAD
+          git push origin "${{ steps.ver.outputs.tag }}"
+
+      - name: Create GitHub release
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        env:
+          NEW_TAG: ${{ steps.ver.outputs.tag }}
+          NEW_VERSION: ${{ steps.ver.outputs.version }}
+        with:
+          script: |
+            const owner = context.repo.owner, repo = context.repo.repo;
+            const newTag = process.env.NEW_TAG, newVersion = process.env.NEW_VERSION;
+            const releases = await github.paginate(github.rest.repos.listReleases, {owner, repo, per_page: 50});
+            const prev = releases.find(r => !r.draft && !r.prerelease && r.tag_name !== newTag);
+            let name = `Release ${newTag}`, body = `Release ${newTag}`;
+            if (prev) {
+              const oldTag = prev.tag_name || "", oldVer = oldTag.replace(/^v/, "");
+              const tR = oldTag ? new RegExp(oldTag.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g") : null;
+              const vR = oldVer ? new RegExp(oldVer.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g") : null;
+              name = prev.name?.trim() ? prev.name : name;
+              body = prev.body?.trim() ? prev.body : body;
+              if (tR) { name = name.replace(tR, newTag); body = body.replace(tR, newTag); }
+              if (vR) { name = name.replace(vR, newVersion); body = body.replace(vR, newVersion); }
+            }
+            await github.rest.repos.createRelease({owner, repo, tag_name: newTag, target_commitish: context.sha, name, body, draft: false, prerelease: false});

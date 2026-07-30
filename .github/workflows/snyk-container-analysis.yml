@@ -1,21 +1,12 @@
-# A sample workflow which checks out the code, builds a container
-# image using Docker and scans that image for vulnerabilities using
-# Snyk. The results are then uploaded to GitHub Security Code Scanning
-#
-# For more examples, including how to limit scans to only high-severity
-# issues, monitor images for newly disclosed vulnerabilities in Snyk and
-# fail PR checks for new vulnerabilities, see https://github.com/snyk/actions/
-
 name: Snyk Container
 
 on:
   push:
     branches: [ main ]
   pull_request:
-    # The branches below must be a subset of the branches above
     branches: [ main ]
   schedule:
-    - cron: '26 20 * * 5'
+    - cron: '35 21 * * 4'
 
 permissions:
   contents: read
@@ -23,27 +14,76 @@ permissions:
 jobs:
   snyk:
     permissions:
-      contents: read # for actions/checkout to fetch code
-      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
+      contents: read
+      security-events: write
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
     - name: Build a Docker image
       run: docker build -t cniweb/cpuminer-multi .
     - name: Run Snyk to check Docker image for vulnerabilities
-      # Snyk can be used to break the build when it detects vulnerabilities.
-      # In this case we want to upload the issues to GitHub Code Scanning
       continue-on-error: true
-      uses: snyk/actions/docker@master
+      uses: snyk/actions/docker@9adf32b1121593767fc3c057af55b55db032dc04 # v1.0.0
       env:
-        # In order to use the Snyk Action you will need to have a Snyk API token.
-        # More details in https://github.com/snyk/actions#getting-your-snyk-token
-        # or you can signup for free at https://snyk.io/login
         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
       with:
         image: cniweb/cpuminer-multi
         args: --file=Dockerfile
+    - name: Debug SARIF structure (before patching)
+      run: |
+        echo "=== SARIF file structure analysis ==="
+        if [ -f snyk.sarif ]; then
+          echo "SARIF file size: $(wc -c < snyk.sarif) bytes"
+          echo "SARIF file lines: $(wc -l < snyk.sarif)"
+        else
+          echo "ERROR: snyk.sarif file not found!"
+          exit 1
+        fi
+        echo "=== SARIF structure sample ==="
+        jq '.runs[0].tool.driver.rules[0:2] // empty' snyk.sarif 2>/dev/null || echo "No rules found"
+        echo "=== All security-severity patterns ==="
+        grep -n "security-severity" snyk.sarif || echo "No security-severity found"
+        echo "=== Finding ALL security-severity with jq ==="
+        jq -r 'paths(scalars) as $p | select(($p | last) == "security-severity") | "Path: " + ($p | join(".")) + " = " + (getpath($p) | tostring) + " (type: " + (getpath($p) | type) + ")"' snyk.sarif || echo "No security-severity found"
+        echo "=== Finding JSON null security-severity with jq ==="
+        jq -r 'paths(scalars) as $p | select(getpath($p) == null and ($p | last) == "security-severity") | "JSON NULL Path: " + ($p | join("."))' snyk.sarif || echo "No JSON null found"
+        echo "=== Finding string null security-severity with jq ==="
+        jq -r 'paths(scalars) as $p | select(getpath($p) == "null" and ($p | last) == "security-severity") | "STRING NULL Path: " + ($p | join("."))' snyk.sarif || echo "No string null found"
+    - name: Patch SARIF file (replace null severity values)
+      run: |
+        echo "=== Patching SARIF file ==="
+        sed -i -E 's/"security-severity"[[:space:]]*:[[:space:]]*null/"security-severity": "0.0"/g' snyk.sarif
+        sed -i -E 's/"security-severity"[[:space:]]*:[[:space:]]*"null"/"security-severity": "0.0"/g' snyk.sarif
+        jq '
+          def fix_security_severity:
+            if type == "object" then
+              if has("security-severity") and ((.["security-severity"] == null) or (.["security-severity"] == "null")) then
+                .["security-severity"] = "0.0"
+              else . end |
+              with_entries(.value |= fix_security_severity)
+            elif type == "array" then
+              map(fix_security_severity)
+            else .
+            end;
+          fix_security_severity
+        ' snyk.sarif > snyk.sarif.tmp && mv snyk.sarif.tmp snyk.sarif
+    - name: Debug SARIF structure (after patching)
+      run: |
+        echo "=== SARIF file after patching ==="
+        grep -n "security-severity" snyk.sarif | head -10 || echo "No security-severity found"
+        jq -r 'paths(scalars) as $p | select(($p | last) == "security-severity") | "Path: " + ($p | join(".")) + " = " + (getpath($p) | tostring)' snyk.sarif || echo "No security-severity found"
+        jq -r 'paths(scalars) as $p | select(getpath($p) == null and ($p | last) == "security-severity") | "REMAINING JSON NULL Path: " + ($p | join("."))' snyk.sarif || echo "OK"
+        jq -r 'paths(scalars) as $p | select(getpath($p) == "null" and ($p | last) == "security-severity") | "REMAINING STRING NULL Path: " + ($p | join("."))' snyk.sarif || echo "OK"
+    - name: Validate SARIF file
+      run: |
+        echo "=== Final validation ==="
+        jq '.' snyk.sarif > /dev/null && echo "SARIF file is valid JSON" || { echo "ERROR"; exit 1; }
+        json_null_count=$(jq '[.. | objects | select(has("security-severity") and (.["security-severity"] == null))] | length' snyk.sarif)
+        if [ "$json_null_count" -gt 0 ]; then echo "ERROR: $json_null_count JSON null values"; exit 1; fi
+        string_null_count=$(jq '[.. | objects | select(has("security-severity") and (.["security-severity"] == "null"))] | length' snyk.sarif)
+        if [ "$string_null_count" -gt 0 ]; then echo "ERROR: $string_null_count string null values"; exit 1; fi
+        echo "SUCCESS: No null severity values found"
     - name: Upload result to GitHub Code Scanning
-      uses: github/codeql-action/upload-sarif@v2
+      uses: github/codeql-action/upload-sarif@e46ed2cbd01164d986452f91f178727624ae40d7 # v4
       with:
         sarif_file: snyk.sarif
