@@ -6,6 +6,7 @@
 - `Dockerfile` compiles cpuminer-multi from the upstream GitHub repository (`tpruvot/cpuminer-multi`).
 - The image has no entrypoint script; the `CMD` is `cpuminer --config=config.json` by default.
 - `build.sh` builds the Docker image and optionally pushes to Docker Hub and GitHub Container Registry.
+- The Dockerfile clones the floating upstream `linux` branch. `ARG VERSION_TAG` is currently metadata/build-argument compatibility only and does not select a source revision; reproducible changes require pinning a commit or tag.
 
 ## Verification
 
@@ -15,12 +16,15 @@
   - `docker run --rm cniweb/cpuminer-multi:test cpuminer --cputest`
 - `./build.sh build-only` is the same build path CI uses on `main`; it exits before security checks or pushes.
 - `./security-check.sh` defaults to image `cniweb/cpuminer-multi:test`; build that tag first or pass a different image name.
+- CI validates the binary version, CPU self-test, and shell audit only; there is no project unit-test or lint suite. `./build.sh build-only` skips security checks and pushes.
 
 ## Shell and runtime constraints
 
 - The image runs as non-root `cpuminer` by default for security.
 - Port `8080` is exposed as the expected non-privileged port.
 - There is no `docker-entrypoint.sh` -- the binary runs directly via `CMD` or user-supplied command.
+- The default config is `/cpuminer/config.json`. Running without a command override may start mining and attempt external pool connectivity.
+- Review compiler flags, including `-pg`, `-O2`, LTO, and hardcoded `make install -j 4`, before changing the build.
 
 ## Release/versioning
 
