@@ -22,6 +22,7 @@ jobs:
     - name: Build a Docker image
       run: docker build -t cniweb/cpuminer-multi .
     - name: Run Snyk to check Docker image for vulnerabilities
+      id: snyk
       continue-on-error: true
       uses: snyk/actions/docker@9adf32b1121593767fc3c057af55b55db032dc04 # v1.0.0
       env:
@@ -30,6 +31,7 @@ jobs:
         image: cniweb/cpuminer-multi
         args: --file=Dockerfile
     - name: Debug SARIF structure (before patching)
+      if: steps.snyk.outcome == 'success' && hashFiles('snyk.sarif') != ''
       run: |
         echo "=== SARIF file structure analysis ==="
         if [ -f snyk.sarif ]; then
@@ -50,6 +52,7 @@ jobs:
         echo "=== Finding string null security-severity with jq ==="
         jq -r 'paths(scalars) as $p | select(getpath($p) == "null" and ($p | last) == "security-severity") | "STRING NULL Path: " + ($p | join("."))' snyk.sarif || echo "No string null found"
     - name: Patch SARIF file (replace null severity values)
+      if: steps.snyk.outcome == 'success' && hashFiles('snyk.sarif') != ''
       run: |
         echo "=== Patching SARIF file ==="
         sed -i -E 's/"security-severity"[[:space:]]*:[[:space:]]*null/"security-severity": "0.0"/g' snyk.sarif
@@ -68,6 +71,7 @@ jobs:
           fix_security_severity
         ' snyk.sarif > snyk.sarif.tmp && mv snyk.sarif.tmp snyk.sarif
     - name: Debug SARIF structure (after patching)
+      if: steps.snyk.outcome == 'success' && hashFiles('snyk.sarif') != ''
       run: |
         echo "=== SARIF file after patching ==="
         grep -n "security-severity" snyk.sarif | head -10 || echo "No security-severity found"
@@ -75,6 +79,7 @@ jobs:
         jq -r 'paths(scalars) as $p | select(getpath($p) == null and ($p | last) == "security-severity") | "REMAINING JSON NULL Path: " + ($p | join("."))' snyk.sarif || echo "OK"
         jq -r 'paths(scalars) as $p | select(getpath($p) == "null" and ($p | last) == "security-severity") | "REMAINING STRING NULL Path: " + ($p | join("."))' snyk.sarif || echo "OK"
     - name: Validate SARIF file
+      if: steps.snyk.outcome == 'success' && hashFiles('snyk.sarif') != ''
       run: |
         echo "=== Final validation ==="
         jq '.' snyk.sarif > /dev/null && echo "SARIF file is valid JSON" || { echo "ERROR"; exit 1; }
@@ -84,6 +89,7 @@ jobs:
         if [ "$string_null_count" -gt 0 ]; then echo "ERROR: $string_null_count string null values"; exit 1; fi
         echo "SUCCESS: No null severity values found"
     - name: Upload result to GitHub Code Scanning
+      if: steps.snyk.outcome == 'success' && hashFiles('snyk.sarif') != ''
       uses: github/codeql-action/upload-sarif@5595ccaf912efad79be6eef63a5619ff05969be3 # v4
       with:
         sarif_file: snyk.sarif
